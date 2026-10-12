@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Раздаточная ведомость — ДИР Усть-Каменогорск</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1d2330;--mut:#6b7385;--line:#d9dde5;--ac:#1f5fbf;--ok:#e3f4e6}
+@media (prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1c2029;--tx:#e8ebf2;--mut:#98a0b3;--line:#323847;--ac:#6ea2ff;--ok:#1f3a27}}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);padding:16px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mut);margin-bottom:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+button,select,input{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}button:hover{border-color:var(--ac)}
+button.pr{background:var(--ac);color:#fff;border-color:var(--ac)}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+summary{cursor:pointer;font-weight:600}
+.it{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap}.it input{flex:1;min-width:200px}
+.wrap{overflow:auto;max-height:78vh;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+table{border-collapse:separate;border-spacing:0;min-width:100%}
+th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px 6px;white-space:nowrap;background:var(--card)}
+thead th{position:sticky;top:0;z-index:2;text-align:center;font-weight:600}
+thead tr:nth-child(2) th{top:33px}
+.s1,.s2{position:sticky;z-index:1}.s1{left:0;width:40px;min-width:40px;text-align:center}.s2{left:40px;min-width:210px}
+thead .s1,thead .s2{z-index:3}
+td input{border:0;background:transparent;width:100%;padding:3px}
+td input[type=date]{width:130px}
+td input.q{width:54px;text-align:center}
+td input.ed{border-bottom:1px dashed var(--line);border-radius:0}
+td input.ed:focus{outline:2px solid var(--ac);border-bottom-color:transparent}
+th.ih{min-width:200px}.hr{display:flex;gap:4px}
+th input.hn{font-weight:600;width:100%;text-align:center;border:1px dashed var(--line);padding:3px}
+select.hc{font-size:11px;margin-top:3px;width:100%;padding:2px}
+thead tr:first-child th{height:34px}
+#title{outline:none;border-bottom:1px dashed transparent}#title:hover,#title:focus{border-bottom-color:var(--line)}
+.rec{display:flex;gap:4px;align-items:center;margin-bottom:2px}
+td button.x,td button.add{padding:1px 6px;font-size:12px;color:var(--mut)}
+td button.add{border-style:dashed}
+tfoot td{font-weight:600;position:sticky;bottom:0;z-index:2}
+tfoot td.s1,tfoot td.s2{z-index:3}
+.cat0{--c:#a1745a}.cat1{--c:#2f7fd1}.cat2{--c:#e0a100}.cat3{--c:#2e9e6a}.cat4{--c:#8e5fc9}
+th[class*=cat]{background:color-mix(in srgb,var(--c) 30%,var(--card))}
+td[class*=cat]{background:color-mix(in srgb,var(--c) 9%,var(--card))}
+td[class*=cat].ok{background:color-mix(in srgb,var(--c) 32%,var(--card))}
+tfoot td[class*=cat]{background:color-mix(in srgb,var(--c) 30%,var(--card))}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.c{text-align:center}.pos{min-width:150px}.sg{min-width:110px}
+@media print{
+ @page{size:A3 landscape;margin:8mm}
+ body{padding:0;background:#fff;color:#000}.bar,details,.nop{display:none}
+ .wrap{max-height:none;overflow:visible;border:0}
+ th:not([class*=cat]),td:not([class*=cat]){background:#fff!important}th,td{color:#000;font-size:10px;padding:2px 3px}:root{--card:#fff}
+ thead th,.s1,.s2{position:static}
+ input{color:#000}
+ th input.hn{border:0}select.hc{display:none}
+}
+</style>
+</head>
+<body>
+<h1 id="title" contenteditable="true" spellcheck="false">ДИР Усть-Каменогорск</h1>
+<div class="sub">Раздаточная ведомость на выдачу спецобуви, спецодежды и инструмента (дата и количество) · названия колонок, ФИО и заголовок правятся прямо в таблице · данные сохраняются в браузере</div>
+
+<div class="bar">
+ <button class="pr" onclick="addPerson()">+ Сотрудник</button>
+ <button onclick="window.print()">Печать</button>
+ <button onclick="exportCSV()">Экспорт CSV</button>
+ <button onclick="exportJSON()">Сохранить JSON</button>
+ <button onclick="document.getElementById('imp').click()">Загрузить JSON</button>
+ <input type="file" id="imp" accept=".json" hidden>
+ <button onclick="resetAll()">Сбросить</button>
+</div>
+
+<details>
+ <summary>Позиции выдачи: добавить, переименовать, удалить</summary>
+ <div id="items"></div>
+ <button onclick="addItem()">+ Добавить позицию</button>
+</details>
+
+<div class="wrap"><table id="tbl"></table></div>
+
+<script>
+var CATS=["Спецобувь","Спецодежда зимняя","Спецодежда летняя","Инструмент","Прочее"];
+var KEY="dir-uk-vedomost-v1";
+var N=30;
+function uid(){return "i"+Math.random().toString(36).slice(2,8)}
+function defaults(){
+ var it=[
+  ["Спецобувь","Ботинки зимние"],["Спецобувь","Ботинки летние"],
+  ["Спецодежда зимняя","Куртка зимняя"],["Спецодежда зимняя","Костюм/брюки зимние"],["Спецодежда зимняя","Шапка, перчатки зимние"],
+  ["Спецодежда летняя","Костюм летний"],["Спецодежда летняя","Футболка / жилет сигнальный"],
+  ["Инструмент","Набор инструментов"],["Инструмент","Шуруповёрт / дрель"],
+  ["Прочее","Каска"],["Прочее","Перчатки рабочие"]
+ ].map(function(a){return{id:uid(),cat:a[0],name:a[1]}});
+ var p=[];for(var i=0;i<N;i++)p.push({name:"",pos:"",d:{}});
+ return{items:it,people:p};
+}
+var S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){S=null}
+if(!S||!S.items||!S.people)S=defaults();
+function migrate(){S.people.forEach(function(p){p.d=p.d||{};for(var k in p.d){if(!Array.isArray(p.d[k]))p.d[k]=p.d[k]?[{date:p.d[k],qty:1}]:[]}})}
+migrate();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function el(t,a,c){var e=document.createElement(t);for(var k in a||{}){if(k==="on")for(var ev in a.on)e.addEventListener(ev,a.on[ev]);else if(k in e&&k!=="colSpan"&&k!=="rowSpan"||k==="value")e[k]=a[k];else e.setAttribute(k,a[k])}
+ (c||[]).forEach(function(x){e.append(x)});return e}
+function sorted(){return S.items.map(function(x,i){return[x,i]}).sort(function(a,b){
+ var d=CATS.indexOf(a[0].cat)-CATS.indexOf(b[0].cat);return d||a[1]-b[1]}).map(function(a){return a[0]})}
+
+function renderItems(){
+ var box=document.getElementById("items");box.innerHTML="";
+ S.items.forEach(function(it){
+  var sel=el("select",{on:{change:function(){it.cat=sel.value;save();renderTable()}}},CATS.map(function(c){return el("option",{value:c,textContent:c,selected:c===it.cat})}));
+  var inp=el("input",{value:it.name,placeholder:"Название позиции",on:{input:function(){it.name=inp.value;save();renderTable()}}});
+  var del=el("button",{textContent:"✕",title:"Удалить",on:{click:function(){delItem(it)}}});
+  box.append(el("div",{className:"it"},[sel,inp,del]));
+ });
+}
+function delItem(it){
+ if(!confirm("Удалить позицию «"+it.name+"» и все выдачи по ней?"))return;
+ S.items=S.items.filter(function(x){return x!==it});S.people.forEach(function(p){delete p.d[it.id]});save();renderItems();renderTable();
+}
+function addItem(){
+ var s=sorted(),id=uid();
+ S.items.push({id:id,cat:s.length?s[s.length-1].cat:"Прочее",name:"Новая позиция"});
+ save();renderItems();renderTable();
+ var w=document.querySelector(".wrap");w.scrollLeft=w.scrollWidth;
+ var f=document.querySelector('input[data-id="'+id+'"]');if(f){f.focus();f.select()}
+}
+function headCell(i){
+ var inp=el("input",{className:"hn","data-id":i.id,value:i.name,placeholder:"Название",on:{input:function(e){i.name=e.target.value;save();renderItems()}}});
+ var del=el("button",{className:"nop",textContent:"✕",title:"Удалить колонку",on:{click:function(){delItem(i)}}});
+ var sel=el("select",{className:"hc",title:"Категория",on:{change:function(e){i.cat=e.target.value;save();renderItems();renderTable()}}},
+  CATS.map(function(c){return el("option",{value:c,textContent:c,selected:c===i.cat})}));
+ return el("th",{className:"ih cat"+CATS.indexOf(i.cat)},[el("div",{className:"hr"},[inp,del]),sel]);
+}
+
+function renderTable(){
+ var t=document.getElementById("tbl");t.innerHTML="";
+ var items=sorted();
+ var h1=el("tr",{},[el("th",{className:"s1",rowSpan:2,textContent:"№"}),el("th",{className:"s2",rowSpan:2,textContent:"ФИО"}),el("th",{rowSpan:2,textContent:"Должность"})]);
+ var h2=el("tr");
+ CATS.forEach(function(c){
+  var g=items.filter(function(i){return i.cat===c});
+  if(g.length){h1.append(el("th",{className:"cat"+CATS.indexOf(c),colSpan:g.length,textContent:c+" — дата / кол-во"}));g.forEach(function(i){h2.append(headCell(i))})}
+ });
+ h1.append(el("th",{rowSpan:2,className:"nop"},[el("button",{className:"pr",textContent:"+ позиция",title:"Добавить колонку справа",on:{click:addItem}})]),
+  el("th",{rowSpan:2,className:"sg",textContent:"Подпись"}),el("th",{rowSpan:2,className:"nop",textContent:""}));
+ t.append(el("thead",{},[h1,h2]));
+ var tb=el("tbody");
+ S.people.forEach(function(p,n){
+  var tr=el("tr",{},[
+   el("td",{className:"s1",textContent:n+1}),
+   el("td",{className:"s2"},[el("input",{className:"ed",value:p.name,placeholder:"Фамилия И.О.",on:{input:function(e){p.name=e.target.value;save()}}})]),
+   el("td",{className:"pos"},[el("input",{className:"ed",value:p.pos,placeholder:"Должность",on:{input:function(e){p.pos=e.target.value;save()}}})])
+  ]);
+  items.forEach(function(i){
+   var td=el("td");drawCell(td,p,i);tr.append(td);
+  });
+  tr.append(el("td",{className:"sg"}),el("td",{className:"nop c"},[el("button",{textContent:"✕",title:"Удалить строку",on:{click:function(){
+   if(confirm("Удалить строку "+(n+1)+"?")){S.people.splice(n,1);save();renderTable()}}}})]));
+  tb.append(tr);
+ });
+ t.append(tb);
+ t.append(el("tfoot",{id:"foot"}));renderFoot();
+}
+function drawCell(td,p,i){
+ var a=p.d[i.id];if(!Array.isArray(a)||!a.length)a=p.d[i.id]=[{date:"",qty:""}];
+ td.innerHTML="";
+ var mark=function(){td.className="cat"+CATS.indexOf(i.cat)+(a.some(function(r){return r.date||r.qty})?" ok":"");renderFoot()};
+ mark();
+ a.forEach(function(r,k){
+  var q=el("input",{type:"number",min:0,className:"q",value:r.qty,placeholder:"шт",on:{input:function(e){r.qty=e.target.value;save();mark()}}});
+  var row=el("div",{className:"rec"},[
+   el("input",{type:"date",value:r.date,on:{change:function(e){r.date=e.target.value;if(r.date&&!r.qty){r.qty=1;q.value=1}save();mark()}}}),q]);
+  if(a.length>1)row.append(el("button",{className:"x nop",textContent:"✕",title:"Удалить выдачу",on:{click:function(){a.splice(k,1);save();drawCell(td,p,i)}}}));
+  td.append(row);
+ });
+}
+function renderFoot(){
+ var f=document.getElementById("foot");if(!f)return;f.innerHTML="";
+ var tr=el("tr",{},[el("td",{className:"s1"}),el("td",{className:"s2",textContent:"Итого выдано, шт"}),el("td")]);
+ sorted().forEach(function(i){var n=0;S.people.forEach(function(p){(p.d[i.id]||[]).forEach(function(r){n+=Number(r.qty)||0})});tr.append(el("td",{className:"c cat"+CATS.indexOf(i.cat),textContent:n}))});
+ tr.append(el("td"),el("td",{className:"nop"}));f.append(tr);
+}
+function addPerson(){S.people.push({name:"",pos:"",d:{}});save();renderTable();var w=document.querySelector(".wrap");w.scrollTop=w.scrollHeight}
+
+function dl(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;a.click()}
+function exportJSON(){dl("vedomost-dir-uk.json",JSON.stringify(S,null,1),"application/json")}
+function exportCSV(){
+ var items=sorted();
+ var q=function(s){return '"'+String(s==null?"":s).replace(/"/g,'""')+'"'};
+ var rows=[["№","ФИО","Должность"].concat(items.map(function(i){return i.cat+": "+i.name})).concat(["Подпись"])];
+ S.people.forEach(function(p,n){rows.push([n+1,p.name,p.pos].concat(items.map(function(i){return (p.d[i.id]||[]).filter(function(r){return r.date||r.qty}).map(function(r){return (r.date||"")+(r.qty?" ×"+r.qty:"")}).join("; ")})).concat([""]))});
+ dl("vedomost-dir-uk.csv","\ufeff"+rows.map(function(r){return r.map(q).join(";")}).join("\n"),"text/csv");
+}
+document.getElementById("imp").addEventListener("change",function(e){
+ var f=e.target.files[0];if(!f)return;var r=new FileReader();
+ r.onload=function(){try{var d=JSON.parse(r.result);if(!d.items||!d.people)throw 0;S=d;migrate();save();setTitle();renderItems();renderTable()}catch(x){alert("Не удалось прочитать файл")}};
+ r.readAsText(f);e.target.value="";
+});
+function resetAll(){if(confirm("Сбросить всё к начальному состоянию? Данные будут удалены.")){S=defaults();save();setTitle();renderItems();renderTable()}}
+function setTitle(){document.getElementById("title").textContent=S.title||"ДИР Усть-Каменогорск"}
+document.getElementById("title").addEventListener("input",function(e){S.title=e.target.textContent;save()});
+setTitle();renderItems();renderTable();
+</script>
+</body>
+</html>
